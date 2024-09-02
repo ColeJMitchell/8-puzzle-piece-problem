@@ -12,9 +12,11 @@ def main():
     #set up the graphical interface
     pygame.init()
     screen = pygame.display.set_mode((900,900))
+    text = pygame.font.Font(None,100)
     pygame.display.set_caption("Puzzle Project")
-
     running = True
+    
+    #loop that continues running until the goal state is achieved
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -23,15 +25,18 @@ def main():
         grid_size = 300      
         color = (230, 230, 250)
         screen.fill(color)  
-        for i, item in enumerate(squares):
+        #draws the rectangles and places the tile numbers inside of them
+        for i, square in enumerate(squares):
             row = i // 3
             col = i % 3
             x = col * grid_size
             y = row * grid_size
             pygame.draw.rect(screen, (0,0,0), (x, y, grid_size, grid_size), 2)  
-            
+            if square != -1:
+                text_screen = text.render(str(square), True, (0, 0, 0))
+                text_rect = text_screen.get_rect(center=(x + grid_size // 2, y + grid_size // 2))
+                screen.blit(text_screen, text_rect.topleft)
         pygame.display.flip()
- 
     pygame.quit()
   
 
