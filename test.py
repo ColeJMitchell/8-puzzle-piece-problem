@@ -1,112 +1,122 @@
 import pygame
-import random
 import heapq
 import copy
+import time
 
-# Initialize the board
-all_squares = [1, 2, 3, 4, 5, 6, 7, 8]
-squares = []
-visited = set()
+# priority_queue that holds board states and their priority
+priority_queue = []
 
-while all_squares:
-    choice = random.randint(0, len(all_squares) - 1)
-    squares.append(all_squares[choice])
-    all_squares.remove(all_squares[choice])
+# original board state
+squares = [8, 6, 7, 2, 5, 4, 3, -1, 1]
 
-random_insert = random.randint(0, len(squares))
-squares.insert(random_insert, -1)
-
+# goal state
 goal_board = [1, 2, 3, 4, 5, 6, 7, 8, -1]
 
+# set to store visited states
+visited = set()
+
+# swaps the target square and the empty square
 def swap(square, board):
     empty_index = board.index(-1)
     best_index = board.index(square)
     board[empty_index] = square
     board[best_index] = -1
 
-def calculate_total_manhattan_distance(board):
+# calculates how the total manhattan distance will change if one of the adjacent squares is moved into the empty space
+def calculate_total_manhattan_distance(square, depth):
+    # theoretical board where the square is swapped with the empty square
+    temp_board = copy.deepcopy(squares)
+    swap(square, temp_board)
+    
+    # If the new board state has already been visited, return immediately
+    if tuple(temp_board) in visited:
+        return
+
     total = 0
-    for i, square in enumerate(board):
+    # calculating manhattan distance for each square in the temp board
+    for square in temp_board:
         if square == -1:
             continue
         correct_row = goal_board.index(square) // 3
         correct_col = goal_board.index(square) % 3
-        current_row = i // 3
-        current_col = i % 3
-        total += abs(current_row - correct_row) + abs(current_col - correct_col)
-    return total
+        current_row = temp_board.index(square) // 3
+        current_col = temp_board.index(square) % 3
+        total += (abs(current_row - correct_row) + abs(current_col - correct_col))
+    total += depth
+    heapq.heappush(priority_queue, (total, temp_board))
 
-def get_adjacent_squares(empty_index, board):
-    adjacent_squares = []
-    empty_row = empty_index // 3
-    empty_col = empty_index % 3
-    
-    if empty_row > 0:
-        adjacent_squares.append(board[empty_index - 3])
-    if empty_row < 2:
-        adjacent_squares.append(board[empty_index + 3])
-    if empty_col > 0:
-        adjacent_squares.append(board[empty_index - 1])
-    if empty_col < 2:
-        adjacent_squares.append(board[empty_index + 1])
-    
-    return adjacent_squares
-
-def choose_best_square(adjacent_squares):
-    priority_queue = []
-    
+# determines the best move to be made by using A*
+def choose_best_move(adjacent_squares, depth):
+    global squares
+    # priority queue to determine the best move to be made
     for square in adjacent_squares:
-        temp_board = copy.deepcopy(squares)
-        swap(square, temp_board)
-        board_tuple = tuple(temp_board)
-        if board_tuple in visited:
-            continue
-        visited.add(board_tuple)
-        f = calculate_total_manhattan_distance(temp_board)
-        heapq.heappush(priority_queue, (f, square))
-    
-    if priority_queue:
-        _, best = heapq.heappop(priority_queue)
-        swap(best, squares)
+        calculate_total_manhattan_distance(square, depth)
+
+    while priority_queue:
+        smallest = heapq.heappop(priority_queue)
+        _, best_board = smallest
+
+        # If the best board has already been visited, skip it
+        if tuple(best_board) not in visited:
+            visited.add(tuple(best_board))  # Mark the board as visited
+            squares = copy.deepcopy(best_board)
+            break
 
 def main():
+    # set up the graphical interface
     pygame.init()
     screen = pygame.display.set_mode((900, 900))
     text = pygame.font.Font(None, 100)
     pygame.display.set_caption("Puzzle Project")
-    
     running = True
+    depth = 0
+    
+    # add the initial board to the visited set
+    visited.add(tuple(squares))
+    
+    # loop that continues running until the goal state is achieved
     while running:
+        depth += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        grid_size = 300      
+        grid_size = 300
         color = (230, 230, 250)
-        screen.fill(color)  
+        screen.fill(color)
 
-        empty_index = squares.index(-1)
-        adjacent_squares = get_adjacent_squares(empty_index, squares)
-        choose_best_square(adjacent_squares)
+        # Finds all of the squares that are adjacent to the empty square (-1)
+        empty_square = squares.index(-1)
+        empty_row = empty_square // 3
+        empty_column = empty_square % 3
+        adjacent_squares = []
+        if empty_row > 0:
+            adjacent_squares.append(squares[empty_square - 3])
+        if empty_row < 2:
+            adjacent_squares.append(squares[empty_square + 3])
+        if empty_column > 0:
+            adjacent_squares.append(squares[empty_square - 1])
+        if empty_column < 2:
+            adjacent_squares.append(squares[empty_square + 1])
 
+        choose_best_move(adjacent_squares, depth)
+
+        # draws the rectangles and places the tile numbers inside of them
         for i, square in enumerate(squares):
             row = i // 3
             col = i % 3
             x = col * grid_size
             y = row * grid_size
-            pygame.draw.rect(screen, (0, 0, 0), (x, y, grid_size, grid_size), 2)  
+            pygame.draw.rect(screen, (0, 0, 0), (x, y, grid_size, grid_size), 2)
             if square != -1:
                 text_screen = text.render(str(square), True, (0, 0, 0))
                 text_rect = text_screen.get_rect(center=(x + grid_size // 2, y + grid_size // 2))
                 screen.blit(text_screen, text_rect.topleft)
-        
         pygame.display.flip()
-
+        
+        # Check if the current state matches the goal state
         if squares == goal_board:
-            pygame.time.wait(1000)  # Wait a moment to show the solved state
-            running = False
+            pygame.quit()
 
-    pygame.quit()
-  
-if __name__ == '__main__': 
+if __name__ == '__main__':
     main()
