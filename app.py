@@ -1,11 +1,12 @@
 import pygame
 import random
 import heapq
+import copy
+import time
 
 #list that shrinks after each tile is randomly added to the squares list
 all_squares = [1,2,3,4,5,6,7,8]
 squares = []
-
 while all_squares:
     choice = random.randint(0,len(all_squares)-1)
     squares.append(all_squares[choice])
@@ -13,40 +14,48 @@ while all_squares:
 
 random_insert = random.randint(0,len(squares))
 squares.insert(random_insert,-1)
-original = squares
+priority_queue = []
+
+squares = [1,8,2,-1,4,3,7,6,5]
 
 goal_board = [1,2,3,4,5,6,7,8,-1]
 
-prior_tile = None
+#swaps the target square and the empty square
+def swap(square, board):      
+    empty_index = board.index(-1)
+    best_index = board.index(square)
+    board[empty_index] = square
+    board[best_index] = -1
+
+#calculates how the total manhattan distance will change if one of the adjacent squares is moved into the empty space
+def calculate_total_manhattan_distance(square, depth):
+    #theoretical board where the square is swapped with the empty square
+    temp_board = copy.deepcopy(squares)
+    swap(square, temp_board)
+    total = 0
+    #calculating manhattan distance for each square in the temp board and adding them to a total counter that will be returned
+    for square in temp_board:
+        if square == -1:
+            continue
+        correct_row = goal_board.index(square) // 3
+        correct_col = goal_board.index(square) % 3
+        current_row = temp_board.index(square) // 3
+        current_col = temp_board.index(square) % 3
+        total += (abs(current_row-correct_row) + abs(current_col-correct_col))
+    total += depth
+    heapq.heappush(priority_queue,(total,temp_board))
+
 #determines the best move to be made by using A* 
-def calculate_priority(adjacent_squares):
-    global prior_tile
+def choose_best_move(adjacent_squares, depth):
+    global squares
     #priority queue to determine the best move to be made
-    priority_queue = []
     for square in adjacent_squares:
-        current_index = squares.index(square)
-        goal_index = goal_board.index(square)
-        original_index = original.index(square)
-        h = abs(current_index-goal_index)
-        g = abs(current_index-original_index)
-        f = g + h
-        heapq.heappush(priority_queue,(-f,square))
+        calculate_total_manhattan_distance(square, depth)
+        
     smallest = heapq.heappop(priority_queue)
-    _ , best = smallest
-    if prior_tile is not None and prior_tile == best:
-        smallest = heapq.heappop(priority_queue)
-        _ , best = smallest
-    prior_tile = best
-    swap(best)
-
-#swaps the squares
-def swap(best):      
-    empty_index = squares.index(-1)
-    best_index = squares.index(best)
-    squares[empty_index] = best
-    squares[best_index] = -1
-
-
+    _ , best_board = smallest
+    squares = copy.deepcopy(best_board)
+    
 
 def main():
     #set up the graphical interface
@@ -55,9 +64,10 @@ def main():
     text = pygame.font.Font(None,100)
     pygame.display.set_caption("Puzzle Project")
     running = True
-    
+    depth = 0
     #loop that continues running until the goal state is achieved
     while running:
+        depth+=1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -80,7 +90,7 @@ def main():
         if empty_column < 2:
             adjacent_squares.append(squares[empty_square+1])
 
-        calculate_priority(adjacent_squares)
+        choose_best_move(adjacent_squares,depth)
 
         #draws the rectangles and places the tile numbers inside of them
         for i, square in enumerate(squares):
@@ -94,10 +104,11 @@ def main():
                 text_rect = text_screen.get_rect(center=(x + grid_size // 2, y + grid_size // 2))
                 screen.blit(text_screen, text_rect.topleft)
         pygame.display.flip()
+        time.sleep(.8)
         if squares == goal_board:
             pygame.quit()
-
-    pygame.quit()
+    
+    #pygame.quit()
   
 if __name__ == '__main__': 
     main()
