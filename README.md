@@ -5,7 +5,7 @@
 4. My algorithm works by minimizing f(n) which is h(n) + g(n).
 5. If the current path exceeds a path that is earlier in the tree my algorithm resets the board to the earlier and cheaper state.
 
-#Running My Code
+**Running My Code**
 1. To run my code first clone the remote repository to your local machine.
 2. Install the necessary Pygane dependency shown in dependencies.txt either to your machine or virtual environment.
 3. There are 2 command line arguements that follow after python3 app.py
