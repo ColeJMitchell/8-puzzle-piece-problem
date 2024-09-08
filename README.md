@@ -1,3 +1,4 @@
+![Board][Board.png]
 **Overview**
 1. The goal of this side project is to use A* to solve 8 piece sliding puzzles.
 2. My heuristic or h(n) is the total manhattan distance of every tile to its goal position.
