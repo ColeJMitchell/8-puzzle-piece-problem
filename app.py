@@ -17,6 +17,8 @@ squares = test_board4
 #goal state
 goal_board = [1,2,3,4,5,6,7,8,-1]
 
+#depth of the search tree
+depth = 0
 
 #swaps the target square and the empty square
 def swap(square, board):      
@@ -26,7 +28,8 @@ def swap(square, board):
     board[best_index] = -1
 
 #calculates how the total manhattan distance will change if one of the adjacent squares is moved into the empty space
-def calculate_total_manhattan_distance(square, depth):
+def calculate_total_manhattan_distance(square):
+    global depth
     #theoretical board where the square is swapped with the empty square
     temp_board = copy.deepcopy(squares)
     swap(square, temp_board)
@@ -41,20 +44,23 @@ def calculate_total_manhattan_distance(square, depth):
         current_col = temp_board.index(square) % 3
         total += (abs(current_row-correct_row) + abs(current_col-correct_col))
     total += depth
-    heapq.heappush(priority_queue,(total,temp_board))
+    heapq.heappush(priority_queue,(total,temp_board,depth))
 
 #determines the best move to be made by using A* 
-def choose_best_move(adjacent_squares, depth):
+def choose_best_move(adjacent_squares):
+    global depth
     global squares
     #priority queue to determine the best move to be made
     for square in adjacent_squares:
-        calculate_total_manhattan_distance(square, depth)      
+        calculate_total_manhattan_distance(square)      
     smallest = heapq.heappop(priority_queue)
-    _ , best_board = smallest
+    _ , best_board, current_depth = smallest
+    depth = current_depth
     squares = copy.deepcopy(best_board)
     
 
 def main():
+    global depth
     #set up the graphical interface
     pygame.init()
     screen = pygame.display.set_mode((900,900))
@@ -62,7 +68,6 @@ def main():
     pygame.display.set_caption("Puzzle Project")
     running = True
     make_move = True
-    depth = 0
     #loop that continues running until the goal state is achieved
     while running:
         depth+=1
@@ -101,8 +106,8 @@ def main():
                 screen.blit(text_screen, text_rect.topleft)
         pygame.display.flip()
         if make_move:
-            choose_best_move(adjacent_squares,depth)
-        time.sleep(1)
+            choose_best_move(adjacent_squares)
+        #time.sleep(.1)
         if squares == goal_board:
             make_move = False
   
