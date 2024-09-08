@@ -9,11 +9,25 @@ priority_queue = []
 
 #original board state
 test_board = [1,2,3,-1,4,6,7,5,8]
-test_board2 = [1,8,2,-1,4,3,7,6,5]
-test_board3 = [4,1,3,-1,2,6,7,5,8]
-test_board4 = [8,6,7,2,5,4,3,-1,1]
+test_board2 = [4,1,3,-1,2,6,7,5,8]
+test_board3 = [1,8,2,-1,4,3,7,6,5]
+test_board4 = [7,2,4,5,-1,6,8,3,1]
+test_board5 = [8,6,7,2,5,4,3,-1,1]
 
-squares = test_board4
+squares = test_board5
+#chooses board based on command line arguement
+if len(sys.argv)>1:
+    if sys.argv[1] == "3":
+        squares = test_board
+    elif sys.argv[1] == "5":
+        squares = test_board2
+    elif sys.argv[1] == "9":
+        squares = test_board3
+    elif sys.argv[1] == "20":
+        squares = test_board4
+    elif sys.argv[1] == "31":
+        pass
+    
 
 #goal state
 goal_board = [1,2,3,4,5,6,7,8,-1]
@@ -49,6 +63,7 @@ def calculate_total_manhattan_distance(square):
         total += (abs(current_row-correct_row) + abs(current_col-correct_col))
     total += depth
     heapq.heappush(priority_queue,(total,temp_board,depth))
+    return total
 
 #determines the best move to be made by using A* 
 def choose_best_move(adjacent_squares):
@@ -123,7 +138,7 @@ def main():
         screen.blit(text1, text1_rect)
         screen.blit(text2, text2_rect)
         pygame.display.flip()
-        if len(sys.argv) > 1 and sys.argv[1] == "slow":
+        if len(sys.argv) > 2 and sys.argv[2] == "slow":
             time.sleep(1)
         if make_move:
             choose_best_move(adjacent_squares)
