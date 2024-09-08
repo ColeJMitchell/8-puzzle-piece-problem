@@ -2,6 +2,7 @@ import pygame
 import heapq
 import copy
 import time
+import sys
 
 #priority_queue that holds board states and their priority
 priority_queue = []
@@ -19,6 +20,9 @@ goal_board = [1,2,3,4,5,6,7,8,-1]
 
 #depth of the search tree
 depth = 0
+
+#keeps track of visited boards so they are not revisited
+visited = []
 
 #swaps the target square and the empty square
 def swap(square, board):      
@@ -55,22 +59,29 @@ def choose_best_move(adjacent_squares):
         calculate_total_manhattan_distance(square)      
     smallest = heapq.heappop(priority_queue)
     _ , best_board, current_depth = smallest
+    while best_board in visited:
+        smallest = heapq.heappop(priority_queue)
+        _ , best_board, current_depth = smallest
     depth = current_depth
+    visited.append(best_board)
     squares = copy.deepcopy(best_board)
     
-
+move = 0
 def main():
+    global move
     global depth
     #set up the graphical interface
     pygame.init()
-    screen = pygame.display.set_mode((900,900))
+    screen = pygame.display.set_mode((1500,900))
     text = pygame.font.Font(None,100)
     pygame.display.set_caption("Puzzle Project")
     running = True
     make_move = True
     #loop that continues running until the goal state is achieved
     while running:
-        depth+=1
+        if make_move:
+            depth+=1
+            move += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -104,12 +115,20 @@ def main():
                 text_screen = text.render(str(square), True, (0, 0, 0))
                 text_rect = text_screen.get_rect(center=(x + grid_size // 2, y + grid_size // 2))
                 screen.blit(text_screen, text_rect.topleft)
+        font = pygame.font.Font(None, 70)
+        text1 = font.render(f"Number of moves: {move}", True, (0, 0, 0))
+        text2 = font.render(f"Depth of solution: {depth}", True, (0, 0, 0))
+        text1_rect = text1.get_rect(center=(1200, 350))
+        text2_rect = text2.get_rect(center=(1200, 450))
+        screen.blit(text1, text1_rect)
+        screen.blit(text2, text2_rect)
         pygame.display.flip()
+        if len(sys.argv) > 1 and sys.argv[1] == "slow":
+            time.sleep(1)
         if make_move:
             choose_best_move(adjacent_squares)
-        #time.sleep(.1)
         if squares == goal_board:
             make_move = False
-  
+
 if __name__ == '__main__': 
     main()
